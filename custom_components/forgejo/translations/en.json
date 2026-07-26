@@ -1,0 +1,69 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Forgejo",
+        "description": "Enter the address of your Forgejo or Gitea instance and an API token. Create a token under Settings → Applications; read-only scopes are enough.",
+        "data": {
+          "url": "Address",
+          "token": "API token",
+          "verify_ssl": "Verify the SSL certificate"
+        },
+        "data_description": {
+          "url": "For example https://git.example.com",
+          "token": "Needs read:repository, read:issue, read:notification and read:user",
+          "verify_ssl": "Turn this off only for an instance using a self-signed certificate"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Reconnect to Forgejo",
+        "description": "The token for {url} is no longer accepted. Enter a new one.",
+        "data": {
+          "token": "API token"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not reach the instance. Check the address, and whether Home Assistant can reach it.",
+      "invalid_auth": "The token was rejected. Check that it is correct and has the required read scopes.",
+      "invalid_response": "The address answered, but not like a Forgejo instance. If it sits behind a login proxy, that proxy has to allow /api/v1.",
+      "unknown": "Something unexpected went wrong. Check the Home Assistant log."
+    },
+    "abort": {
+      "already_configured": "This account on this instance is already set up.",
+      "reauth_successful": "Reconnected."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Repositories to track",
+        "description": "Pick the repositories you want entities for. Each one is polled every five minutes, so tracking a large number makes for a lot of requests.",
+        "data": {
+          "repositories": "Repositories"
+        }
+      }
+    },
+    "abort": {
+      "cannot_connect": "Could not reach the instance to load the repository list."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "unread_notifications": { "name": "Unread notifications" },
+      "version": { "name": "Version" },
+      "open_issues": { "name": "Open issues" },
+      "open_pull_requests": { "name": "Open pull requests" },
+      "stars": { "name": "Stars" },
+      "forks": { "name": "Forks" },
+      "releases": { "name": "Releases" },
+      "size": { "name": "Size" },
+      "last_commit": { "name": "Last commit" },
+      "latest_run_status": { "name": "Latest run status" }
+    },
+    "binary_sensor": {
+      "ci_failing": { "name": "CI failing" },
+      "ci_running": { "name": "CI running" }
+    }
+  }
+}

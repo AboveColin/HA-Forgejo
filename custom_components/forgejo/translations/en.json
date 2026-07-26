@@ -51,11 +51,15 @@
   "entity": {
     "sensor": {
       "unread_notifications": { "name": "Unread notifications" },
+      "assigned_issues": { "name": "Assigned issues" },
+      "review_requests": { "name": "Review requests" },
       "version": { "name": "Version" },
       "open_issues": { "name": "Open issues" },
       "open_pull_requests": { "name": "Open pull requests" },
       "stars": { "name": "Stars" },
       "forks": { "name": "Forks" },
+      "watchers": { "name": "Watchers" },
+      "latest_release": { "name": "Latest release" },
       "releases": { "name": "Releases" },
       "size": { "name": "Size" },
       "last_commit": { "name": "Last commit" },

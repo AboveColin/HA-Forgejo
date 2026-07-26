@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import replace
 from unittest.mock import AsyncMock
 
+from forgejo import ForgejoConnectionError
+
 from homeassistant.const import STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
 
@@ -19,6 +21,37 @@ async def test_instance_sensors(
         hass.states.get("sensor.git_example_com_unread_notifications").state == "5"
     )
     assert hass.states.get("sensor.git_example_com_version").state == "10.0.0"
+    assert hass.states.get("sensor.git_example_com_assigned_issues").state == "4"
+    assert hass.states.get("sensor.git_example_com_review_requests").state == "6"
+
+
+async def test_latest_release(
+    hass: HomeAssistant, setup_integration: MockConfigEntry
+) -> None:
+    """The newest release tag lands on the repository device."""
+    state = hass.states.get("sensor.example_user_example_repo_latest_release")
+    assert state.state == "v1.2.3"
+    assert state.attributes["name"] == "Example release"
+    assert state.attributes["prerelease"] is False
+
+
+async def test_release_not_fetched_without_any(
+    hass: HomeAssistant, mock_client: AsyncMock, config_entry: MockConfigEntry
+) -> None:
+    """A repository with no releases costs no extra request."""
+    mock_client.get_repository.return_value = replace(
+        mock_client.get_repository.return_value, releases=0
+    )
+
+    config_entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    mock_client.get_latest_release.assert_not_called()
+    assert (
+        hass.states.get("sensor.example_user_example_repo_latest_release").state
+        == STATE_UNKNOWN
+    )
 
 
 async def test_repository_sensors(
@@ -92,6 +125,23 @@ async def test_ci_unknown_without_runs(
         hass.states.get("binary_sensor.example_user_example_repo_ci_failing").state
         == STATE_UNKNOWN
     )
+
+
+async def test_release_fetch_failure_is_not_fatal(
+    hass: HomeAssistant, mock_client: AsyncMock, config_entry: MockConfigEntry
+) -> None:
+    """A failing release lookup leaves the rest of the repository intact."""
+    mock_client.get_latest_release.side_effect = ForgejoConnectionError("gone")
+
+    config_entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert (
+        hass.states.get("sensor.example_user_example_repo_latest_release").state
+        == STATE_UNKNOWN
+    )
+    assert hass.states.get("sensor.example_user_example_repo_open_issues").state == "3"
 
 
 def _with_status(run, status: str):

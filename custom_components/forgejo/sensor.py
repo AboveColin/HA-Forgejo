@@ -42,6 +42,18 @@ INSTANCE_SENSORS: tuple[ForgejoSensorDescription, ...] = (
         value_fn=lambda c: c.data.unread_notifications if c.data else None,
     ),
     ForgejoSensorDescription(
+        key="assigned_issues",
+        translation_key="assigned_issues",
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda c: c.data.assigned_issues if c.data else None,
+    ),
+    ForgejoSensorDescription(
+        key="review_requests",
+        translation_key="review_requests",
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda c: c.data.review_requests if c.data else None,
+    ),
+    ForgejoSensorDescription(
         key="version",
         translation_key="version",
         entity_category=EntityCategory.DIAGNOSTIC,
@@ -74,6 +86,18 @@ REPOSITORY_SENSORS: tuple[ForgejoRepositorySensorDescription, ...] = (
         entity_registry_enabled_default=False,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda d: d.repository.forks,
+    ),
+    ForgejoRepositorySensorDescription(
+        key="watchers",
+        translation_key="watchers",
+        entity_registry_enabled_default=False,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda d: d.repository.watchers,
+    ),
+    ForgejoRepositorySensorDescription(
+        key="latest_release",
+        translation_key="latest_release",
+        value_fn=lambda d: d.latest_release.tag_name if d.latest_release else None,
     ),
     ForgejoRepositorySensorDescription(
         key="releases",
@@ -166,7 +190,7 @@ class ForgejoRepositorySensor(ForgejoRepositoryEntity, SensorEntity):
         return self.entity_description.value_fn(data)
 
     @property
-    def extra_state_attributes(self) -> dict[str, str | int | None] | None:
+    def extra_state_attributes(self) -> dict[str, str | int | bool | None] | None:
         """Expose run and commit detail on the sensors that have some."""
         if (data := self.repository_data) is None:
             return None
@@ -179,6 +203,17 @@ class ForgejoRepositorySensor(ForgejoRepositoryEntity, SensorEntity):
                 "branch": run.head_branch,
                 "title": run.display_title,
                 "url": run.url,
+            }
+        if self.entity_description.key == "latest_release" and data.latest_release:
+            release = data.latest_release
+            return {
+                "name": release.name,
+                "draft": release.draft,
+                "prerelease": release.prerelease,
+                "published_at": (
+                    release.published_at.isoformat() if release.published_at else None
+                ),
+                "url": release.html_url,
             }
         if self.entity_description.key == "last_commit" and data.latest_commit:
             commit = data.latest_commit

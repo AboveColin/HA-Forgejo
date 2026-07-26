@@ -11,6 +11,7 @@ from forgejo import (
     ForgejoAuthenticationError,
     ForgejoClient,
     ForgejoError,
+    Release,
     Repository,
     ServerInfo,
     WorkflowRun,
@@ -35,6 +36,7 @@ class RepositoryData:
     repository: Repository
     latest_run: WorkflowRun | None = None
     latest_commit: Commit | None = None
+    latest_release: Release | None = None
 
 
 @dataclass
@@ -43,6 +45,8 @@ class ForgejoData:
 
     server: ServerInfo
     unread_notifications: int
+    assigned_issues: int = 0
+    review_requests: int = 0
     repositories: dict[str, RepositoryData] = field(default_factory=dict)
 
 
@@ -75,9 +79,11 @@ class ForgejoCoordinator(DataUpdateCoordinator[ForgejoData]):
     async def _async_update_data(self) -> ForgejoData:
         """Refresh everything."""
         try:
-            server, unread = await asyncio.gather(
+            server, unread, assigned, reviews = await asyncio.gather(
                 self.client.get_version(),
                 self.client.get_new_notification_count(),
+                self.client.get_assigned_issue_count(),
+                self.client.get_review_request_count(),
             )
         except ForgejoAuthenticationError as err:
             # Re-auth rather than a generic failure: the token was revoked or
@@ -106,12 +112,27 @@ class ForgejoCoordinator(DataUpdateCoordinator[ForgejoData]):
                 # own entities go unavailable because its key is missing.
                 _LOGGER.warning("Skipping %s this cycle: %s", slug, err)
                 continue
+
+            # Only worth a round trip when the repository payload says there is
+            # something to fetch; most repositories never cut a release.
+            release: Release | None = None
+            if repo.releases:
+                try:
+                    release = await self.client.get_latest_release(owner, name)
+                except ForgejoError as err:
+                    _LOGGER.debug("No release info for %s: %s", slug, err)
+
             repositories[slug] = RepositoryData(
-                repository=repo, latest_run=run, latest_commit=commit
+                repository=repo,
+                latest_run=run,
+                latest_commit=commit,
+                latest_release=release,
             )
 
         return ForgejoData(
             server=server,
             unread_notifications=unread,
+            assigned_issues=assigned,
+            review_requests=reviews,
             repositories=repositories,
         )

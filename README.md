@@ -56,6 +56,8 @@ One device for the instance:
 | Entity | Description |
 |---|---|
 | Unread notifications | Your unread notification count |
+| Assigned issues | Open issues assigned to you, across every repository |
+| Review requests | Open pull requests waiting on your review |
 | Version | Instance version (diagnostic) |
 
 One device per tracked repository:
@@ -66,6 +68,8 @@ One device per tracked repository:
 | Open pull requests | Open pull requests |
 | Stars | Stargazers |
 | Forks | Forks (disabled by default) |
+| Watchers | Watchers (disabled by default) |
+| Latest release | Newest release tag, with name, prerelease flag and publish date as attributes |
 | Releases | Published releases (disabled by default) |
 | Size | Repository size (disabled by default) |
 | Last commit | Timestamp of the tip commit, with sha, message and author as attributes |

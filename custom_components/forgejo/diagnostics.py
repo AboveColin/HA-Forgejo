@@ -64,6 +64,9 @@ async def async_get_config_entry_diagnostics(
                 if repo_data.latest_run
                 else None,
                 "has_commit": repo_data.latest_commit is not None,
+                # A tag name is free-form and often names a customer or an
+                # internal milestone, so only its presence is reported.
+                "has_release": repo_data.latest_release is not None,
             }
             del slug  # deliberately not reported
 
@@ -77,6 +80,8 @@ async def async_get_config_entry_diagnostics(
         },
         "server_version": data.server.version if data else None,
         "unread_notifications": data.unread_notifications if data else None,
+        "assigned_issues": data.assigned_issues if data else None,
+        "review_requests": data.review_requests if data else None,
         "last_update_success": coordinator.last_update_success,
         "repositories": repositories,
     }

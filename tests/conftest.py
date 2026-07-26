@@ -6,7 +6,7 @@ from collections.abc import Generator
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 
-from forgejo import Commit, Repository, ServerInfo, User, WorkflowRun
+from forgejo import Commit, Release, Repository, ServerInfo, User, WorkflowRun
 import pytest
 
 from homeassistant.const import CONF_TOKEN, CONF_URL
@@ -106,12 +106,27 @@ def commit() -> Commit:
 
 
 @pytest.fixture
+def release() -> Release:
+    """Return the newest release."""
+    return Release(
+        id=3,
+        tag_name="v1.2.3",
+        name="Example release",
+        draft=False,
+        prerelease=False,
+        html_url=f"{URL}/{SLUG}/releases/tag/v1.2.3",
+        published_at=datetime(2026, 1, 1, tzinfo=UTC),
+    )
+
+
+@pytest.fixture
 def mock_client(
     server_info: ServerInfo,
     user: User,
     repository: Repository,
     workflow_run: WorkflowRun,
     commit: Commit,
+    release: Release,
 ) -> Generator[AsyncMock]:
     """Patch ForgejoClient everywhere the integration constructs one."""
     client = AsyncMock()
@@ -122,6 +137,9 @@ def mock_client(
     client.get_repository.return_value = repository
     client.get_latest_workflow_run.return_value = workflow_run
     client.get_latest_commit.return_value = commit
+    client.get_latest_release.return_value = release
+    client.get_assigned_issue_count.return_value = 4
+    client.get_review_request_count.return_value = 6
 
     with (
         patch(

@@ -25,6 +25,11 @@ from homeassistant.const import CONF_TOKEN, CONF_URL
 from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
+    TextSelector,
+    TextSelectorConfig,
+    TextSelectorType,
+)
+from homeassistant.helpers.selector import (
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
@@ -34,10 +39,14 @@ from .const import CONF_REPOSITORIES, CONF_VERIFY_SSL, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
+# A bare `str` renders the secret in clear text in the config form. TextSelector
+# with type PASSWORD makes the browser treat it as a password field.
+_SECRET = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
+
 STEP_USER_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_URL): str,
-        vol.Required(CONF_TOKEN): str,
+        vol.Required(CONF_TOKEN): _SECRET,
         vol.Optional(CONF_VERIFY_SSL, default=True): bool,
     }
 )
@@ -151,7 +160,7 @@ class ForgejoConfigFlow(ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="reauth_confirm",
-            data_schema=vol.Schema({vol.Required(CONF_TOKEN): str}),
+            data_schema=vol.Schema({vol.Required(CONF_TOKEN): _SECRET}),
             description_placeholders={"url": entry.data[CONF_URL]},
             errors=errors,
         )

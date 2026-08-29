@@ -40,14 +40,14 @@ Then add the integration and fill in:
 
 | Field | Example | Notes |
 |---|---|---|
-| Address | `https://git.example.com` | The web address, not the API path. Pasting `/api/v1` on the end is fine — it gets stripped. |
+| Address | `https://git.example.com` | The web address, not the API path. Pasting `/api/v1` on the end is fine, it gets stripped. |
 | API token | `a1b2c3…` | The token you just made |
 | Verify the SSL certificate | on | Turn off only for a self-signed certificate on your own network |
 
 After setup, open the integration's **Configure** button to choose which
-repositories you want entities for. Nothing is tracked until you pick something
-— an instance can have hundreds of repositories and polling all of them would
-be rude.
+repositories you want entities for. Nothing is tracked until you pick
+something, because an instance can have hundreds of repositories and polling
+all of them would be rude.
 
 ## Entities
 
@@ -74,8 +74,8 @@ One device per tracked repository:
 | Size | Repository size (disabled by default) |
 | Last commit | Timestamp of the tip commit, with sha, message and author as attributes |
 | Latest run status | Status of the most recent Actions run, with workflow, branch and run number as attributes |
-| CI failing | `Problem` — on when the last finished run failed |
-| CI running | `Running` — on while a run is in progress (disabled by default) |
+| CI failing | `Problem`, on when the last finished run failed |
+| CI running | `Running`, on while a run is in progress (disabled by default) |
 
 Entities that are off by default can be turned on individually from the device
 page.
@@ -113,18 +113,18 @@ public one.
 
 ## Troubleshooting
 
-**"The address answered, but not like a Forgejo instance"** — something other
+**"The address answered, but not like a Forgejo instance"**. Something other
 than Forgejo replied. Usually an authentication proxy in front of the instance
 returning its own login page. Allow `/api/v1` through unauthenticated, or point
 Home Assistant at the instance directly.
 
-**"The token was rejected"** — either the token is wrong, or it is missing one
+**"The token was rejected"**. Either the token is wrong, or it is missing one
 of the four read scopes. Tokens cannot be edited after creation; make a new one.
 
-**Nothing but the two instance entities appeared** — no repositories are
+**Nothing but the two instance entities appeared**. No repositories are
 selected yet. Use the **Configure** button.
 
-**A repository's entities went unavailable** — it was renamed, deleted, or made
+**A repository's entities went unavailable**. It was renamed, deleted, or made
 private to an account the token cannot see. The other repositories keep working.
 
 For a bug report, attach diagnostics from the integration's ⋮ menu. Repository

@@ -1,5 +1,7 @@
-pytest==9.0.0
-pytest-asyncio==1.3.0
-pytest-cov
+# pytest, pytest-asyncio and pytest-cov are pinned to exact versions by
+# pytest-homeassistant-custom-component, so pinning them here too only creates
+# a conflict the moment the harness moves. It moved: the harness now wants
+# pytest 9.0.3 and pytest-asyncio 1.4.0, and this file asked for 9.0.0 and
+# 1.3.0, which made the install unresolvable. Let the harness choose them.
 pytest-homeassistant-custom-component
 forgejo==1.0.0

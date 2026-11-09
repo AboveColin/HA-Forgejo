@@ -35,7 +35,7 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
 )
 
-from .const import CONF_REPOSITORIES, CONF_VERIFY_SSL, DOMAIN
+from .const import CONF_REPOSITORIES, CONF_VERIFY_SSL, DOMAIN, REQUEST_TIMEOUT
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -85,6 +85,7 @@ class ForgejoConfigFlow(ConfigFlow, domain=DOMAIN):
             token=token,
             session=async_get_clientsession(self.hass, verify_ssl=verify_ssl),
             verify_ssl=verify_ssl,
+            timeout=REQUEST_TIMEOUT,
         )
         try:
             await client.get_version()
@@ -189,6 +190,7 @@ class ForgejoOptionsFlow(OptionsFlow):
             token=entry.data[CONF_TOKEN],
             session=async_get_clientsession(self.hass, verify_ssl=verify_ssl),
             verify_ssl=verify_ssl,
+            timeout=REQUEST_TIMEOUT,
         )
         try:
             repositories = await client.list_repositories()

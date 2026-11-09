@@ -2,14 +2,19 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 
-from forgejo import ForgejoAuthenticationError, ForgejoConnectionError
+from forgejo import (
+    ForgejoAuthenticationError,
+    ForgejoConnectionError,
+    ForgejoNotFoundError,
+)
 
 from homeassistant.config_entries import ConfigEntryState
+from homeassistant.const import STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
 
-from custom_components.forgejo.const import CONF_REPOSITORIES
+from custom_components.forgejo.const import CONF_REPOSITORIES, REQUEST_TIMEOUT
 
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -77,3 +82,47 @@ async def test_one_bad_repository_does_not_break_the_rest(
 
     # The instance sensors still exist.
     assert hass.states.get("sensor.git_example_com_unread_notifications")
+
+
+async def test_client_gets_request_timeout(
+    hass: HomeAssistant, mock_client: AsyncMock, config_entry: MockConfigEntry
+) -> None:
+    """The client is built with the longer timeout, not the library default."""
+    config_entry.add_to_hass(hass)
+    with patch(
+        "custom_components.forgejo.ForgejoClient", return_value=mock_client
+    ) as client_cls:
+        await hass.config_entries.async_setup(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+    assert client_cls.call_args.kwargs["timeout"] == REQUEST_TIMEOUT
+
+
+async def test_repository_without_actions_keeps_other_entities(
+    hass: HomeAssistant, mock_client: AsyncMock, config_entry: MockConfigEntry
+) -> None:
+    """A 404 on the runs endpoint means no runs, not a missing repository."""
+    mock_client.get_latest_workflow_run.side_effect = ForgejoNotFoundError("off")
+    config_entry.add_to_hass(hass)
+
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert hass.states.get("sensor.example_user_example_repo_stars").state == "7"
+    run = hass.states.get("sensor.example_user_example_repo_latest_run_status")
+    assert run.state == STATE_UNKNOWN
+
+
+async def test_failing_counter_does_not_fail_refresh(
+    hass: HomeAssistant, mock_client: AsyncMock, config_entry: MockConfigEntry
+) -> None:
+    """A timed out issue search leaves the other entities working."""
+    mock_client.get_assigned_issue_count.side_effect = ForgejoConnectionError("slow")
+    config_entry.add_to_hass(hass)
+
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert config_entry.state is ConfigEntryState.LOADED
+    assert hass.states.get("sensor.git_example_com_assigned_issues").state == STATE_UNKNOWN
+    assert hass.states.get("sensor.git_example_com_review_requests").state == "6"

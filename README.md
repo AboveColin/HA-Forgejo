@@ -127,6 +127,14 @@ selected yet. Use the **Configure** button.
 **A repository's entities went unavailable**. It was renamed, deleted, or made
 private to an account the token cannot see. The other repositories keep working.
 
+**A repository's latest run is unknown**. Actions is disabled for the
+repository, or it has no workflow runs yet. Its other entities are not affected.
+
+**Setup times out on a large public instance**. Requests time out after 30
+seconds. If the assigned issue or review request count still fails to load, the
+sensor keeps its last value and a warning is logged; everything else keeps
+updating.
+
 For a bug report, attach diagnostics from the integration's ⋮ menu. Repository
 names, commit messages and your address are stripped out of that file.
 

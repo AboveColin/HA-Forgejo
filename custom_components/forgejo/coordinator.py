@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable
 from dataclasses import dataclass, field
 import logging
 
@@ -11,6 +12,7 @@ from forgejo import (
     ForgejoAuthenticationError,
     ForgejoClient,
     ForgejoError,
+    ForgejoNotFoundError,
     Release,
     Repository,
     ServerInfo,
@@ -45,8 +47,8 @@ class ForgejoData:
 
     server: ServerInfo
     unread_notifications: int
-    assigned_issues: int = 0
-    review_requests: int = 0
+    assigned_issues: int | None = None
+    review_requests: int | None = None
     repositories: dict[str, RepositoryData] = field(default_factory=dict)
 
 
@@ -76,14 +78,43 @@ class ForgejoCoordinator(DataUpdateCoordinator[ForgejoData]):
         """Return the ``owner/name`` slugs the user chose to track."""
         return list(self.config_entry.options.get(CONF_REPOSITORIES, []))
 
+    async def _optional_count(
+        self, request: Awaitable[int], attribute: str
+    ) -> int | None:
+        """Await an instance-wide count, keeping the old value if it fails.
+
+        These searches are the slowest calls on a large instance. Losing one
+        count should not make the rest of the instance unavailable.
+        """
+        try:
+            return await request
+        except ForgejoAuthenticationError:
+            raise
+        except ForgejoError as err:
+            _LOGGER.warning("Could not refresh %s: %s", attribute, err)
+            return getattr(self.data, attribute, None)
+
+    async def _latest_run(self, owner: str, name: str) -> WorkflowRun | None:
+        """Return the latest run, or ``None`` if Actions is disabled."""
+        try:
+            return await self.client.get_latest_workflow_run(owner, name)
+        except ForgejoNotFoundError:
+            # Repositories with Actions disabled answer 404 here. That is the
+            # same as having no runs, not a reason to drop the repository.
+            return None
+
     async def _async_update_data(self) -> ForgejoData:
         """Refresh everything."""
         try:
             server, unread, assigned, reviews = await asyncio.gather(
                 self.client.get_version(),
                 self.client.get_new_notification_count(),
-                self.client.get_assigned_issue_count(),
-                self.client.get_review_request_count(),
+                self._optional_count(
+                    self.client.get_assigned_issue_count(), "assigned_issues"
+                ),
+                self._optional_count(
+                    self.client.get_review_request_count(), "review_requests"
+                ),
             )
         except ForgejoAuthenticationError as err:
             # Re-auth rather than a generic failure: the token was revoked or
@@ -101,7 +132,7 @@ class ForgejoCoordinator(DataUpdateCoordinator[ForgejoData]):
             try:
                 repo, run, commit = await asyncio.gather(
                     self.client.get_repository(owner, name),
-                    self.client.get_latest_workflow_run(owner, name),
+                    self._latest_run(owner, name),
                     self.client.get_latest_commit(owner, name),
                 )
             except ForgejoAuthenticationError as err:

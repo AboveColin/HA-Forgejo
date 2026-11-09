@@ -12,6 +12,10 @@ CONF_VERIFY_SSL: Final = "verify_ssl"
 
 DEFAULT_SCAN_INTERVAL: Final = timedelta(minutes=5)
 
+# The instance-wide issue search behind the assigned issue and review request
+# counts takes over 10 seconds on large public instances such as codeberg.org.
+REQUEST_TIMEOUT: Final = 30
+
 # Each tracked repository costs three requests per refresh (repo, latest run,
 # latest commit). Tracking everything on a busy instance at a short interval is
 # the fastest way to annoy an admin, so the picker is opt-in per repository.

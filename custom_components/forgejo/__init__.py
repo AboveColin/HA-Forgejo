@@ -9,7 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .const import CONF_VERIFY_SSL
+from .const import CONF_VERIFY_SSL, REQUEST_TIMEOUT
 from .coordinator import ForgejoConfigEntry, ForgejoCoordinator
 from .entity import instance_device_info
 
@@ -24,6 +24,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ForgejoConfigEntry) -> b
         token=entry.data[CONF_TOKEN],
         session=async_get_clientsession(hass, verify_ssl=verify_ssl),
         verify_ssl=verify_ssl,
+        timeout=REQUEST_TIMEOUT,
     )
 
     coordinator = ForgejoCoordinator(hass, entry, client)
